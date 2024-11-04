@@ -1,6 +1,8 @@
 """Abstract test objects for providing a schema to write and parse test cases"""
 
+import json
 import random
+import re
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, replace
@@ -31,6 +33,51 @@ class TestCase:
 
     failure_message: Optional[str]
     """a message to show to students if this test cases fails"""
+
+    pretty_print_error: bool
+    """whether to return nicely formatted exceptions or not"""
+
+
+    def processed_assert_statements(self):
+        if not self.pretty_print_error:
+            return self.body
+
+        function_name = self.test_function_name()
+
+        def _build_assert_statement(matchobj):
+            parts = []
+            parts.append(matchobj.group(1))
+            parts.append(matchobj.group(2))
+            parts.append(matchobj.group(3))
+            parts.append(matchobj.group(4))
+            parts.append(matchobj.group(5))
+            parts.append(f", {function_name}_desc({i}, ")
+            parts.append(matchobj.group(3).strip())
+            parts.append(", ")
+            parts.append(json.dumps(matchobj.group(3).strip()))
+            parts.append(")")
+            return "".join(parts)
+            
+
+        lines = self.body.split("\n")
+        processed_lines = []
+        for i, line in enumerate(lines):
+            if "assert " not in line:
+                processed_lines.append(line)
+                continue
+            processed_line = re.sub(r"^([^a-zA-Z0-9]+)(assert )(.*)(==|<=|>=)(.*)$", _build_assert_statement, line)
+            processed_lines.append(processed_line)
+        return "\n".join(processed_lines)
+
+
+    def test_function_name(self):
+        res = re.findall(r"def ([^(]+)", self.body)
+        if len(res) > 0:
+            return res[0]
+        else:
+            return ""
+        
+                
 
 
 @dataclass

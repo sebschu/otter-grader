@@ -206,6 +206,11 @@ class Assignment(fica.Config, Loggable):
             default=None,
         )
 
+        test_zip: Optional[str] = fica.Key(
+            description="a URL for where a ZIP file with tests can be found for student use",
+            default=None,
+        )
+
     tests: TestsValue = fica.Key(
         description="information about the structure and storage of tests",
         subkey_container=TestsValue,

@@ -71,7 +71,10 @@ def get_notebook_language(nb: nbf.NotebookNode) -> str:
     Returns:
         ``str``: the name of the language as a lowercased string
     """
-    return nb["metadata"]["kernelspec"]["language"].lower()
+    if "language_info" in nb["metadata"]:
+        return nb["metadata"]["language_info"]["name"].lower()
+    else:
+        return nb["metadata"]["kernelspec"]["language"].lower()
 
 
 def is_ignore_cell(cell: nbf.NotebookNode) -> bool:

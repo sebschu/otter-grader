@@ -57,7 +57,7 @@ class CellFactory:
 
         extra_cells = []
         if self.assignment.runs_on == "colab":
-            pip_cell = nbformat.v4.new_code_cell("%pip install -q otter-grader")
+            pip_cell = nbformat.v4.new_code_cell(f"!pip install otter-grader\n!wget \"{self.assignment.tests.test_zip}\" && unzip -o tests.zip")
             lock(pip_cell)
             extra_cells.append(pip_cell)
 

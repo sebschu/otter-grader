@@ -33,10 +33,38 @@ name = "{{ name }}"
 points = {{ points }}{% if all_or_nothing %}
 all_or_nothing = True{% endif %}
 
-{% for tc in test_cases %}@test_case(points={{ tc.points }}, hidden={{ tc.hidden }}{% if tc.success_message is not none %}, 
+def format_error(lines, line, ret_value="", fn_name=""):
+    return_str = "\\n\\n"
+    return_str += "The last line of the following test program failed.\\n"
+    return_str += "Make sure that your function returns exactly the same value\\n"
+    return_str += "as specified in the <b>assert</b> statement.\\n\\n"
+
+    num_spaces = len(lines[2]) - len(lines[2].strip()) 
+    return_str += "\\n".join([l[num_spaces:].strip() for l in lines[2:line+1]])
+    return_str += "\\n<b>"
+    return_str += lines[line+1][num_spaces:]
+    return_str += "</b>\\n\\n"
+
+    return_str += f"{fn_name} returned:\\n"
+    return_str += str(ret_value)
+    return_str += "\\n\\n"
+
+    return return_str  
+
+
+
+{% for tc in test_cases %}
+def {{ tc.test_function_name() }}_desc(line, ret_value, fn_name):
+    test_strs = '''
+{{ tc.body }}
+    '''.split("\\n")
+    return format_error(test_strs, line, ret_value, fn_name)
+
+
+@test_case(points={{ tc.points }}, hidden={{ tc.hidden }}{% if tc.success_message is not none %}, 
     success_message="{{ tc.success_message }}"{% endif %}{% if tc.failure_message is not none %}, 
     failure_message="{{ tc.failure_message }}"{% endif %})
-{{ tc.body }}
+{{ tc.processed_assert_statements() }}
 
 {% endfor %}
 """
@@ -150,7 +178,7 @@ class AssignmentTestsManager:
         points = config.get("points", None)
         success_message = config.get("success_message", None)
         failure_message = config.get("failure_message", None)
-
+        pretty_print_error = config.get("pretty_print", True)
         test_source = get_source(cell)[test_start_line + 1 :]
         test_ast = ast.parse("\n".join(test_source))
         body: str = ""
@@ -171,7 +199,7 @@ class AssignmentTestsManager:
         self._add_test_case(
             question,
             # TODO: does the test case need a name?
-            TestCase("", body, hidden, points, success_message, failure_message),
+            TestCase("", body, hidden, points, success_message, failure_message, pretty_print_error),
         )
 
     def has_tests(self, question: QuestionConfig) -> bool:

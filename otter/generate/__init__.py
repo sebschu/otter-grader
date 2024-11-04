@@ -107,6 +107,7 @@ class CondaEnvironment:
 COMMON_TEMPLATES = [
     "common/run_autograder",
     "common/run_otter.py",
+    "common/prepare_nbs.py",
 ]
 
 LANGUAGE_BASED_CONFIGURATIONS = {
