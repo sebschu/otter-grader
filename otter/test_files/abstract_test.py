@@ -65,7 +65,7 @@ class TestCase:
             if "assert " not in line:
                 processed_lines.append(line)
                 continue
-            processed_line = re.sub(r"^([^a-zA-Z0-9]+)(assert )(.*)(==|<=|>=)(.*)$", _build_assert_statement, line)
+            processed_line = re.sub(r"^([^a-zA-Z0-9]+)(assert )(.+ )(==|<=?|>=?)( .+)$", _build_assert_statement, line)
             processed_lines.append(processed_line)
         return "\n".join(processed_lines)
 
