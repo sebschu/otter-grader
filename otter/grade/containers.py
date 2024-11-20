@@ -18,7 +18,7 @@ from .utils import OTTER_DOCKER_IMAGE_NAME, TimeoutException
 from .. import logging
 from ..run import AutograderConfig
 from ..test_files import GradingResults
-from ..utils import OTTER_CONFIG_FILENAME
+from ..utils import format_exception, OTTER_CONFIG_FILENAME
 
 
 LOGGER = logging.get_logger(__name__)
@@ -176,11 +176,11 @@ def grade_submission(
         if pdf_dir:
             volumes.append((pdf_path, f"/autograder/submission/{nb_name}.pdf"))
 
-        args = {}
-        if not network:
-            args["networks"] = "none"
-
-        container = docker.container.create(image, command=["/autograder/run_autograder"], **args)
+        container = docker.container.create(
+            image,
+            command=["/autograder/run_autograder"],
+            networks=["none"] if not network else [],
+        )
 
         for local_path, container_path in volumes:
             docker.container.copy(local_path, (container, container_path))
@@ -245,10 +245,12 @@ def grade_submission(
 
     except TimeoutException as te:
         scores = GradingResults.without_results(te)
-        LOGGER.error(f"Notebook Grading Timeout Error: {nb_basename}")
+        LOGGER.error(f'Submission "{nb_basename}" timed out during grading')
     except Exception as e:
         scores = GradingResults.without_results(e)
-        LOGGER.error(f"Notebook Grading Error: {nb_basename}")
+        LOGGER.error(
+            f'An error occurred while grading "{nb_basename}":\n{indent(format_exception(e), "  > ")}'
+        )
 
     finally:
         scores.file = nb_basename
